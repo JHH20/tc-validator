@@ -2,6 +2,7 @@
 from pathlib import Path
 import subprocess
 import stat
+import argparse
 
 class RunnerEnv:
     """
@@ -18,6 +19,9 @@ class RunnerEnv:
     F_STDIN = "stdin.txt"
     F_STDOUT = "stdout.txt"
     F_STDERR = "stderr.txt"
+
+    DEF_PORT = 55555
+    DEF_TIMEOUT = 5 # in seconds
 
     @staticmethod
     def check_dependency():
@@ -120,7 +124,7 @@ class CheckerBase:
         return f"{self.target} {' '.join(self.args)}"
 
 
-    def run(self, timeout = 5):
+    def run(self, timeout):
         """
         Execute user binary in chroot jail with timeout in seconds
         Return cpu time, exit status, stdout, stderr
@@ -158,6 +162,22 @@ class CheckerBase:
         results["status"] = self.status
 
         return results
+
+
+def parse_args():
+    """
+    Configure argument options and return the argparse object
+    """
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("-p", "--port", dest="port", default=RunnerEnv.DEF_PORT,
+        help="Port number for inter-module communication")
+    parser.add_argument("-t", "--timeout", dest="timeout",
+        default=RunnerEnv.DEF_TIMEOUT, help="Execution timeout in seconds")
+    parser.add_argument("-e", "--exec", dest="exec", required=True,
+        help="Path to executable inside chroot")
+
+    return parser.parse_args()
 
 
 def main():
