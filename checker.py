@@ -176,6 +176,8 @@ def parse_args():
         default=RunnerEnv.DEF_TIMEOUT, help="Execution timeout in seconds")
     parser.add_argument("-e", "--exec", dest="exec", required=True,
         help="Path to executable inside chroot")
+    parser.add_argument("-ip", "--ipaddr", dest="ip", required=True,
+        help="IP address for inter-module communication")
 
     return parser.parse_args()
 
