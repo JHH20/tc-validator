@@ -1,0 +1,3 @@
+[submodule "notBaekjunCommon"]
+	path = notBaekjunCommon
+	url = https://github.com/notBaekjun/notBaekjunCommon.git

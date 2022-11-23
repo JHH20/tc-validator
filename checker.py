@@ -4,33 +4,7 @@ import subprocess
 import stat
 import argparse
 
-class RunnerEnv:
-    """
-    Define constants and helper functions
-    related to the runner's execution environment
-    """
-    HOME_DIR = Path.home()
-    EXPECTED_DIR = Path("/expected")
-    OUTPUT_DIR = Path("/actual")
-
-    EXPECTED_CONSOLE = EXPECTED_DIR / "cio"
-    EXPECTED_FILE = EXPECTED_DIR / "file"
-
-    F_STDIN = "stdin.txt"
-    F_STDOUT = "stdout.txt"
-    F_STDERR = "stderr.txt"
-
-    DEF_PORT = 55555
-    DEF_TIMEOUT = 5 # in seconds
-
-    @staticmethod
-    def check_dependency():
-        """
-        Check for presence of required dependencies
-        Also check for POSIX binaries
-        """
-        raise NotImplementedError()
-
+from notBaekjunCommon import *
 
 def exec(*args, **kwargs):
     """
@@ -64,7 +38,7 @@ class CheckerBase:
         path1 = path1.resolve()
         path2 = path2.resolve()
         if not path1.is_file() or not path2.is_file():
-            return 2, ""
+            return RunnerEnv.DIFF_ERR, ""
 
         res = exec([*CheckerBase.DIFF, path1.as_posix(), path2.as_posix()])
         return res.returncode, res.stdout
@@ -78,11 +52,11 @@ class CheckerBase:
         path1 = path1.resolve()
         path2 = path2.resolve()
         if not path1.is_dir() or not path2.is_dir():
-            return 2, 0
+            return RunnerEnv.DIFF_ERR, 0
 
         perm1 = self.get_perms(path1)
         perm2 = self.get_perms(path2)
-        status = 0 if perm1 == perm2 else 1
+        status = RunnerEnv.DIFF_PASS if perm1 == perm2 else RunnerEnv.DIFF_FAIL
         return status, perm1 ^ perm2
 
 
