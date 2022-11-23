@@ -1,27 +1,12 @@
 #!/usr/bin/env python3
 from pathlib import Path
-import subprocess
 import stat
-import argparse
 
 from notBaekjunCommon import *
-
-def exec(*args, **kwargs):
-    """
-    Wrap subprocess.run to capture output as text
-    """
-    exec_args = {**kwargs, "capture_output": True, "text": True}
-    return subprocess.run(*args, **exec_args)
-
+from .validator_helper import *
 
 class CheckerBase:
     DIFF = "diff --no-dereference -s --".split()
-
-    def __init__(self, target: Path, args: list[str]):
-        self.target = target
-        self.args = args
-        self.status = None
-
 
     def get_perms(self, path: Path):
         """
@@ -91,21 +76,6 @@ class CheckerBase:
         return results
 
 
-    def build_run_cmd(self) -> str:
-        """
-        Return command for executing user binary
-        """
-        return f"{self.target} {' '.join(self.args)}"
-
-
-    def run(self, timeout):
-        """
-        Execute user binary in chroot jail with timeout in seconds
-        Return cpu time, exit status, stdout, stderr
-        """
-        raise NotImplementedError()
-
-
     def collect_result(self) -> dict:
         """
         Collect testcase result
@@ -136,29 +106,3 @@ class CheckerBase:
         results["status"] = self.status
 
         return results
-
-
-def parse_args():
-    """
-    Configure argument options and return the argparse object
-    """
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument("-p", "--port", dest="port", default=RunnerEnv.DEF_PORT,
-        help="Port number for inter-module communication")
-    parser.add_argument("-t", "--timeout", dest="timeout",
-        default=RunnerEnv.DEF_TIMEOUT, help="Execution timeout in seconds")
-    parser.add_argument("-e", "--exec", dest="exec", required=True,
-        help="Path to executable inside chroot")
-    parser.add_argument("-ip", "--ipaddr", dest="ip", required=True,
-        help="IP address for inter-module communication")
-
-    return parser.parse_args()
-
-
-def main():
-    pass
-
-
-if __name__ == "__main__":
-    main()
