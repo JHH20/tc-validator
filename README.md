@@ -6,11 +6,27 @@
 Directory structure는 다음과 같이 한다.
 ```
 /
-+ - runner.py = 모듈 진입점
-+ - chroot/
-    + - home/
-        + - [user]
-            + - [test program]
++- runner.py
+|  ...
+|
++- expected/
+|   +- cio/
+|       +- stdout.txt
+|       +- stderr.txt
+|   +- file/
+|       +- file1.txt (as relative path)
+|       +- file2.txt
+|   ...
+|
++- actual/
+|   +- stdout.txt
+|   +- stderr.txt
+|
++- chroot/
+    +- <system files>
+    +- home/
+        +- user/
+            +- [사용자 실행파일]
 ```
 
 이 모듈은 다음의 역할을 수행한다:
@@ -22,3 +38,10 @@ Directory structure는 다음과 같이 한다.
     - exit status
     - etc
 - API를 통해 수합한 [test program]의 결과를 전달한다
+
+# Dependency
+- GNU coreutils
+    - chroot
+    - timeout
+- sudo
+    - Expects this script to be executed by sudo for resolving uid/gid of user
