@@ -25,7 +25,7 @@ class CheckerBase:
         if not path1.is_file() or not path2.is_file():
             return RunnerEnv.DIFF_ERR, ""
 
-        res = exec([*CheckerBase.DIFF, path1.as_posix(), path2.as_posix()])
+        res = exec_prog([*CheckerBase.DIFF, path1.as_posix(), path2.as_posix()])
         return res.returncode, res.stdout
 
 

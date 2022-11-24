@@ -1,13 +1,17 @@
+from pathlib import Path
 import argparse
+import os
 
 from .checker import *
 from .validator_helper import *
 
 class Runner:
-    TIMEOUT = "timeout -s 9 --".split()
     TIMEOUT_STATUS = 137
 
     def __init__(self, exec: Path, args: list[str]):
+        """
+        exec: Absolute path to executable target
+        """
         self.exec = exec.relative_to(RunnerEnv.CHROOT_DIR)
         self.args = args
         self.status = 0
@@ -18,8 +22,14 @@ class Runner:
         Timeout in seconds
         """
         assert timeout > 0
-        cmd = [*Runner.TIMEOUT, timeout, self.exec, *self.args]
-        return exec(cmd)
+        uid = os.getenv("SUDO_UID")
+        gid = os.getenv("SUDO_GID")
+        cmd = [
+            "chroot", f"--userspec={uid}:{gid}", "--", RunnerEnv.CHROOT_DIR,
+            "timeout", "-s", "9", "--", timeout,
+            self.exec, *self.args
+        ]
+        return exec_prog(cmd)
 
 
 def parse_args():
@@ -41,7 +51,40 @@ def parse_args():
 
 
 def main():
-    pass
+    if os.geteuid() != 0 or "SUDO_USER" not in os.environ:
+        print("Please execute this script with sudo")
+        exit(1)
+
+    args = parse_args()
+
+    sock = None # To be implemented
+    # Connect to backend
+
+    try:
+        runner = Runner(Path(args["exec"]).resolve(), [])
+        """
+        Do NOT use shell=True with bash redirection
+        Using redirection will allow malicious program to escape the chroot jail
+        """
+        proc = runner.run(args["timeout"])
+        with open(RunnerEnv.OUTPUT_DIR / RunnerEnv.F_STDOUT) as stdout:
+            stdout.write(proc.stdout)
+        with open(RunnerEnv.OUTPUT_DIR / RunnerEnv.F_STDERR) as stderr:
+            stderr.write(proc.stderr)
+    except ValueError:
+        # ValueError caused by exec path not being under CHROOT
+        # May write some code later to handle this
+        pass
+
+    try:
+        checked_res = CheckerBase().collect_result()
+    except ValueError:
+        # ValueError caused by bug in find_cio_pairs()
+        # Shouldn't happen unless running environment not constructed correctly
+        pass
+
+    # Do stuff to wrap checked_res into TCResult()
+    # Then do stuff to send that result to backend via sock
 
 
 if __name__ == "__main__":
