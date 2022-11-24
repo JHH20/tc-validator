@@ -1,53 +1,12 @@
 #!/usr/bin/env python3
 from pathlib import Path
-import subprocess
 import stat
-import argparse
 
-class RunnerEnv:
-    """
-    Define constants and helper functions
-    related to the runner's execution environment
-    """
-    HOME_DIR = Path.home()
-    EXPECTED_DIR = Path("/expected")
-    OUTPUT_DIR = Path("/actual")
-
-    EXPECTED_CONSOLE = EXPECTED_DIR / "cio"
-    EXPECTED_FILE = EXPECTED_DIR / "file"
-
-    F_STDIN = "stdin.txt"
-    F_STDOUT = "stdout.txt"
-    F_STDERR = "stderr.txt"
-
-    DEF_PORT = 55555
-    DEF_TIMEOUT = 5 # in seconds
-
-    @staticmethod
-    def check_dependency():
-        """
-        Check for presence of required dependencies
-        Also check for POSIX binaries
-        """
-        raise NotImplementedError()
-
-
-def exec(*args, **kwargs):
-    """
-    Wrap subprocess.run to capture output as text
-    """
-    exec_args = {**kwargs, "capture_output": True, "text": True}
-    return subprocess.run(*args, **exec_args)
-
+from notBaekjunCommon import *
+from .validator_helper import *
 
 class CheckerBase:
     DIFF = "diff --no-dereference -s --".split()
-
-    def __init__(self, target: Path, args: list[str]):
-        self.target = target
-        self.args = args
-        self.status = None
-
 
     def get_perms(self, path: Path):
         """
@@ -64,7 +23,7 @@ class CheckerBase:
         path1 = path1.resolve()
         path2 = path2.resolve()
         if not path1.is_file() or not path2.is_file():
-            return 2, ""
+            return RunnerEnv.DIFF_ERR, ""
 
         res = exec([*CheckerBase.DIFF, path1.as_posix(), path2.as_posix()])
         return res.returncode, res.stdout
@@ -78,11 +37,11 @@ class CheckerBase:
         path1 = path1.resolve()
         path2 = path2.resolve()
         if not path1.is_dir() or not path2.is_dir():
-            return 2, 0
+            return RunnerEnv.DIFF_ERR, 0
 
         perm1 = self.get_perms(path1)
         perm2 = self.get_perms(path2)
-        status = 0 if perm1 == perm2 else 1
+        status = RunnerEnv.DIFF_PASS if perm1 == perm2 else RunnerEnv.DIFF_FAIL
         return status, perm1 ^ perm2
 
 
@@ -117,21 +76,6 @@ class CheckerBase:
         return results
 
 
-    def build_run_cmd(self) -> str:
-        """
-        Return command for executing user binary
-        """
-        return f"{self.target} {' '.join(self.args)}"
-
-
-    def run(self, timeout):
-        """
-        Execute user binary in chroot jail with timeout in seconds
-        Return cpu time, exit status, stdout, stderr
-        """
-        raise NotImplementedError()
-
-
     def collect_result(self) -> dict:
         """
         Collect testcase result
@@ -162,29 +106,3 @@ class CheckerBase:
         results["status"] = self.status
 
         return results
-
-
-def parse_args():
-    """
-    Configure argument options and return the argparse object
-    """
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument("-p", "--port", dest="port", default=RunnerEnv.DEF_PORT,
-        help="Port number for inter-module communication")
-    parser.add_argument("-t", "--timeout", dest="timeout",
-        default=RunnerEnv.DEF_TIMEOUT, help="Execution timeout in seconds")
-    parser.add_argument("-e", "--exec", dest="exec", required=True,
-        help="Path to executable inside chroot")
-    parser.add_argument("-ip", "--ipaddr", dest="ip", required=True,
-        help="IP address for inter-module communication")
-
-    return parser.parse_args()
-
-
-def main():
-    pass
-
-
-if __name__ == "__main__":
-    main()
