@@ -1,6 +1,6 @@
 import subprocess
 
-def exec(*args, **kwargs):
+def exec_prog(*args, **kwargs):
     """
     Wrap subprocess.run to capture output as text
     """
